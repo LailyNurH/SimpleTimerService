@@ -54,7 +54,7 @@ public class TimerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         startService(intent);
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
     @Override

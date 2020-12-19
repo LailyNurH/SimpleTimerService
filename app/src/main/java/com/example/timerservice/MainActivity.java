@@ -18,7 +18,41 @@ import com.example.timerservice.service.TimerService;
 public class MainActivity extends AppCompatActivity {
 
     private TextView mTextTimer;
-    private Button mButtonStart;
+    private Button mButtonStart, mButtonStop;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        mTextTimer = findViewById(R.id.tv_timer);
+        mButtonStart = findViewById(R.id.bt_start);
+        mButtonStop = findViewById(R.id.bt_stop);
+
+        setupView();
+    }
+
+    private void setupView() {
+        registerReceiver(broadcastReceiver, new IntentFilter(TimerService.BROADCAST_ACTION));
+
+        mButtonStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, TimerService.class);
+                intent.setAction(TimerService.ACTION_START_FOREGROUND_SERVICE);
+                startService(intent);
+            }
+        });
+
+        mButtonStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mTextTimer.setText("0:00");
+                Intent intent = new Intent(MainActivity.this, TimerService.class);
+                intent.setAction(TimerService.ACTION_STOP_FOREGROUND_SERVICE);
+                stopService(intent);
+            }
+        });
+    }
 
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -27,64 +61,9 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        Log.i("D3MI03", "Activity onCreate");
-
-        init();
-    }
-
-    private void init() {
-        mTextTimer = findViewById(R.id.tv_timer);
-        mButtonStart = findViewById(R.id.bt_start);
-
-        if (isMyServiceRunning(TimerService.class)) {
-            mButtonStart.setText("Restart");
-        } else {
-            mButtonStart.setText("Start");
-        }
-
-        registerReceiver(broadcastReceiver, new IntentFilter(TimerService.BROADCAST_ACTION));
-
-        mButtonStart.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent serviceIntent = new Intent(MainActivity.this, TimerService.class);
-
-                if (isMyServiceRunning(TimerService.class)) {
-                    stopService(serviceIntent);
-                }
-
-                startService(serviceIntent);
-
-                mButtonStart.setText("Restart");
-            }
-        });
-    }
-
     private void updateUI(Intent intent) {
         int mins = intent.getIntExtra("mins", 0);
         int secs = intent.getIntExtra("secs", 0);
-
         mTextTimer.setText("" + mins + ":" + String.format("%02d", secs));
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Log.i("D3MI03", "Activity onDestroy");
-    }
-
-    private boolean isMyServiceRunning(Class<TimerService> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
     }
 }
